@@ -77,11 +77,13 @@ fun <T> SegmentedControl(
                             onSelected(opt)
                         }
                     }
-                    .padding(horizontal = DsqSpacing.sm),
+                    .padding(horizontal = DsqSpacing.xs),
             ) {
                 Text(
                     text = labelFor(opt),
                     style = style,
+                    maxLines = 1,
+                    softWrap = false,
                     color = fg,
                     textAlign = TextAlign.Center,
                 )

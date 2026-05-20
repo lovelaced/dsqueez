@@ -46,6 +46,7 @@ import app.dsqueez.photo.SaveResult
 import app.dsqueez.settings.UserPrefs
 import app.dsqueez.ui.components.PrimaryButton
 import app.dsqueez.ui.components.SUPPORTED_RATIOS
+import app.dsqueez.ui.components.formatRatio
 import app.dsqueez.ui.theme.Dsq
 import app.dsqueez.ui.theme.DsqSpacing
 import androidx.compose.foundation.clickable
@@ -86,7 +87,7 @@ fun BatchScreen(
         TopBar(onBack)
 
         Text(
-            text = "${uris.size} PHOTOS · ${"%.2f".format(ratio)}×",
+            text = "${uris.size} PHOTOS · ${formatRatio(ratio)}",
             style = Dsq.type.micro,
             color = Dsq.colors.textTertiary,
             modifier = Modifier.padding(horizontal = DsqSpacing.screenH, vertical = DsqSpacing.sm),

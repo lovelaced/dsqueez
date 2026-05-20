@@ -58,6 +58,7 @@ import app.dsqueez.ui.components.PhotoFrame
 import app.dsqueez.ui.components.PrimaryButton
 import app.dsqueez.ui.components.RatioControl
 import app.dsqueez.ui.components.SUPPORTED_RATIOS
+import app.dsqueez.ui.components.formatRatio
 import app.dsqueez.ui.theme.Dsq
 import app.dsqueez.ui.theme.DsqMotion
 import app.dsqueez.ui.theme.DsqSpacing
@@ -422,7 +423,7 @@ private fun buildMetadataItems(
     val outH = metadata.uprightHeight
     return listOf(
         MetadataItem("SOURCE", "${metadata.uprightWidth}×${metadata.uprightHeight}"),
-        MetadataItem("RATIO",  "${"%.2f".format(ratio)}×"),
+        MetadataItem("RATIO",  formatRatio(ratio)),
         MetadataItem("OUTPUT", "${outW}×$outH"),
         MetadataItem("FORMAT", "JPEG"),
     )

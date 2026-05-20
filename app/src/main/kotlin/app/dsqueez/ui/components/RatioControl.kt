@@ -12,10 +12,9 @@ import app.dsqueez.ui.theme.Dsq
 import app.dsqueez.ui.theme.DsqSpacing
 
 /**
- * Segmented selector over the supported squeeze ratios.
- *
- * v1 ships with a single detent (1.33×) — the data type is already plural so
- * adding 1.5×, 1.55×, 2.0× later is a one-line change to [SUPPORTED_RATIOS].
+ * Segmented selector over the supported squeeze ratios. The set matches the
+ * Lumix S9's native video desqueeze modes — same number you set in-camera
+ * for video applies here for stills.
  */
 @Composable
 fun RatioControl(
@@ -38,11 +37,13 @@ fun RatioControl(
             options = SUPPORTED_RATIOS,
             selected = selected,
             onSelected = onSelected,
-            labelFor = { "${formatRatio(it)}×" },
+            labelFor = { formatRatio(it) },
         )
     }
 }
 
-val SUPPORTED_RATIOS: List<Float> = listOf(1.33f)
+val SUPPORTED_RATIOS: List<Float> = listOf(1.30f, 1.33f, 1.50f, 1.60f, 1.80f, 2.00f)
 
-private fun formatRatio(r: Float): String = "%.2f".format(r)
+/** Two-decimal precision keeps all labels at equal width — tabular numerals
+ *  in the segmented control depend on it for the engraved-tool look. */
+fun formatRatio(r: Float): String = "%.2f×".format(r)
