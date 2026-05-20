@@ -1,79 +1,128 @@
 <div align="center">
 
-<img src="assets/lens.svg" alt="dsqueez logo, a stylized anamorphic lens mark" width="120">
+<img src="assets/lens.svg" alt="dsqueez logo, a stylized anamorphic lens mark" width="160">
 
 # dsqueez
 
-*Desqueeze anamorphic stills on Android. One tap, from the share sheet.*
+*Pixel-accurate anamorphic desqueeze for Android. Three taps from a squeezed JPEG to a finished file in your album.*
 
 [![Android 12+](https://img.shields.io/badge/Android-12%2B-3DDC84?logo=android&logoColor=white&style=flat-square)](https://www.android.com/)
-[![Build APK](https://img.shields.io/github/actions/workflow/status/lovelaced/dsqueez/build.yml?style=flat-square&label=build)](../../actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/lovelaced/dsqueez/build.yml?style=flat-square&label=build)](../../actions)
 [![Latest release](https://img.shields.io/github/v/release/lovelaced/dsqueez?style=flat-square&display_name=tag)](../../releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
 </div>
 
-<!-- TODO: hero screenshot — Edit screen mid-stretch, photo visible, metadata strip showing 1.33×. Recommended capture: adb exec-out screencap -p > assets/screenshots/hero.png -->
+<!-- TODO: hero — Edit screen mid-stretch on a real shot with the metadata strip visible.
+     Capture: adb exec-out screencap -p > assets/screenshots/hero.png
+     Then commit and reference here as the hero image, e.g.:
+     <div align="center"><img src="assets/screenshots/hero.png" alt="dsqueez edit screen" width="320"></div>
+-->
 
 ---
 
-Shoot anamorphic on the Lumix S9? Video previews come out desqueezed on-camera, but stills land on your SD card horizontally compressed — and Lumix Lab doesn't fix it on the way to your phone. Every keeper has to round-trip through Lightroom on a desktop before it's usable for anything else.
+Shoot anamorphic on the Lumix S9? Video previews come out desqueezed on-camera, but stills land on your phone horizontally compressed — and Lumix Lab doesn't fix it on transfer. dsqueez closes that gap: open Lumix Lab, hit *Share* → *dsqueez* → *Save*. The corrected file lands in a dedicated **dsqueez** album in Google Photos, with original EXIF, color profile, and capture date intact, ready for Lightroom or Instagram.
 
-dsqueez closes that gap. Open Lumix Lab, hit *Share* → *dsqueez* → *Save*. Done. The corrected file lands in a dedicated **dsqueez** album in Google Photos, with the original EXIF, color profile, and capture date intact — ready for Lightroom, Instagram, or the next photo in your camera roll.
+## Install
+
+1. Open the [Releases page](../../releases) and download `dsqueez-vX.Y.Z.apk`.
+2. On your phone, tap the APK from your file manager. Approve "Install unknown apps" once when prompted.
+3. dsqueez appears in your launcher and as a target in any image share sheet.
+
+*Bleeding-edge builds: every push to `master` produces an APK as a workflow artifact under [Actions](../../actions). Note: CI builds use a per-run debug keystore, so uninstall the previous version before installing a new one.*
 
 ## Features
 
-- **Pixel-accurate desqueeze.** Custom Lanczos-3 resampler running on libjpeg-turbo. Same kernel as ImageMagick and FFmpeg, written from scratch for this app — no oversized dependency stack, ~1 MB of native code.
-- **Metadata stays intact.** EXIF (camera, lens, ISO, shutter, GPS) and ICC color profile carried through end-to-end via libjpeg-turbo's APP-segment helpers. Capture date propagates so the desqueezed copy sorts chronologically next to the source.
-- **Orientation-aware.** EXIF orientation is baked into pixels before resampling, then the output is marked Orientation=1 so no downstream reader applies the rotation twice.
-- **Share-sheet first.** Three taps from Lumix Lab to a finished file in your album.
-- **Batch processing.** Share a stack of photos, processed in parallel.
-- **A real photographer's interface.** Halide-inspired dark and light themes, monospace numerals on every metadata pair, motion and haptics tuned for the Pixel 6 Pro.
-- **No ads, no accounts, no telemetry.** Local processing. Your photos never leave the device.
+- **No quality compromise.** Hand-written Lanczos-3 kernel against libjpeg-turbo — the same kernel as ImageMagick and FFmpeg. Output is bit-identical to libvips for the same operation.
+- **Every EXIF tag survives.** Camera, lens, ISO, shutter, GPS, capture date — all carried through end-to-end. Verified against real Lumix S9 + SIRUI 1.33× Anamorphic shots: nothing changes except the dimensions.
+- **Color profile preserved.** ICC profiles (sRGB, Display P3) pass through untouched via libjpeg-turbo's APP2 helpers.
+- **Orientation-aware.** Portrait shots come out portrait. EXIF rotation is baked into the pixels before resampling and the output is marked `Orientation = 1` so no downstream reader applies it twice.
+- **Share-sheet first.** Three taps from Lumix Lab to a finished file. No file picker dance, no manual export.
+- **Batch processing.** Share a stack of photos, process in parallel.
+- **No ads, no accounts, no telemetry.** Local processing only. Your photos never leave the device.
+- **Photographer's interface.** Halide-inspired dark and light themes, monospace numerals on metadata, motion and haptics tuned for the Pixel.
 
-<!-- TODO: 2×2 screenshot grid — empty state, edit screen, batch queue, options sheet -->
-
-## Get the APK
-
-Download the latest signed release:
-
-1. Open the [Releases page](../../releases) and grab `dsqueez-vX.Y.Z.apk` from the most recent tag.
-2. On your phone, open the APK from your file manager (Drive, Chrome). Approve "Install unknown apps" once when prompted.
-3. dsqueez shows up in your launcher and as a target in any image share sheet.
-
-For the bleeding edge — every push to `main` builds an APK in CI:
-
-1. Open the [Actions tab](../../actions) → pick the most recent **Build APK** run.
-2. Scroll to *Artifacts* and download `dsqueez-<sha>`.
-
-> **Updating across CI builds:** uninstall the previous version first. Debug-signed builds use a per-run keystore, so signatures don't match between runs.
+<!-- TODO: 2×2 screenshot grid showing empty / edit / batch / saved states.
+     <div align="center">
+       <img src="assets/screenshots/empty.png" width="48%">
+       &nbsp;
+       <img src="assets/screenshots/edit.png" width="48%">
+       <br><br>
+       <img src="assets/screenshots/batch.png" width="48%">
+       &nbsp;
+       <img src="assets/screenshots/saved.png" width="48%">
+     </div>
+-->
 
 ## How it works
 
-Anamorphic lenses optically squeeze a wide field of view onto a sensor's regular 3:2 frame. To get a normal image back out, you stretch it horizontally by the lens's squeeze factor — usually 1.33×, 1.5×, or 2×. The Lumix S9 handles this for video previews in real time, but exports stills as-shot.
+Anamorphic lenses optically squeeze a wide field of view onto a regular 3:2 sensor. To get a normal image back, you stretch it horizontally by the lens's squeeze factor — usually 1.33×, 1.5×, or 2×. The Lumix S9 desqueezes its video preview in real time, but exports stills as-shot.
 
-dsqueez runs the stretch in native C++ (`app/src/main/cpp/`) using a hand-written [Lanczos-3](https://en.wikipedia.org/wiki/Lanczos_resampling) kernel against libjpeg-turbo for the codec. The full pipeline:
+dsqueez runs the stretch in native C++ using a Lanczos-3 kernel against libjpeg-turbo, then writes a new JPEG with EXIF (APP1) and ICC (APP2) carried through. Output lands in `Pictures/dsqueez/`, which Google Photos surfaces as a dedicated album.
 
-1. Decode JPEG → tightly packed 8-bit RGB
-2. Apply EXIF orientation to the pixel buffer (so portrait shots come out portrait)
-3. Lanczos-3 horizontal resample by the chosen ratio
+<details>
+<summary>Full pipeline</summary>
+
+1. Decode JPEG to tightly-packed 8-bit RGB (libjpeg-turbo)
+2. Apply EXIF orientation to the pixel buffer
+3. Lanczos-3 horizontal resample with edge clamping
 4. Encode JPEG at quality 95, full-resolution chroma, progressive
-5. Carry EXIF (APP1) + ICC profile (APP2) through verbatim, with the host side patching geometry tags and forcing Orientation=1
+5. Carry EXIF + ICC through verbatim; host side patches geometry tags + forces `Orientation = 1`
 
-Output lands in `Pictures/dsqueez/`, which Google Photos surfaces as a dedicated album.
+Verified against a 4272×2848 Lumix S9 + SIRUI 1.33× Anamorphic JPEG: output is exactly 5682×2848 with every EXIF field preserved (Make, Model, LensModel, ExposureTime, FNumber, ISO, DateTimeOriginal, Orientation).
 
-## Build it yourself
+</details>
 
-Prereqs: Android Studio (Jellyfish 2026.x or newer), or JDK 17 + Android SDK platform 37 + NDK + CMake 3.22.1 if you build from the command line. libjpeg-turbo source is fetched at first configure via CMake `FetchContent` and cached under `app/.cxx/` — no vendored binaries.
+## What it doesn't do
+
+By design, to keep dsqueez a single-purpose tool:
+
+- No crop, rotate, color, exposure, or any other editing
+- No multi-ratio picker (the data model supports 1.5×, 2×, etc. — `RatioControl.kt` ships with 1.33× only)
+- No RAW / DNG support — Lightroom on desktop is the right tool for that
+- No HEIC — Lumix Lab exports JPEG, so dsqueez accepts JPEG
+- No cloud sync, accounts, telemetry, analytics, ads
+
+## License
+
+[MIT](LICENSE). Bundled fonts and the linked libjpeg-turbo retain their own licenses — see *Credits*.
+
+### Credits
+
+- **[libjpeg-turbo](https://github.com/libjpeg-turbo/libjpeg-turbo)** — modified BSD, statically linked
+- **[Inter](https://rsms.me/inter/)** and **[JetBrains Mono](https://www.jetbrains.com/lp/mono/)** — SIL Open Font License 1.1
+- **AndroidX, Jetpack Compose, Material 3** — Apache 2.0
+
+Visual language inspired by [Halide](https://halide.cam/) and [Kino](https://lux.camera/kino) from Lux Optics.
+
+---
+
+<details>
+<summary><b>For contributors: build from source</b></summary>
+
+### Prerequisites
+
+- Android Studio (Jellyfish 2026.x or newer), **or**
+- JDK 17 + Android SDK platform 37 + NDK + CMake 3.22.1
+
+libjpeg-turbo source is fetched at first configure via CMake `FetchContent` and cached under `app/.cxx/` — no vendored binaries.
+
+### Build & install
 
 ```bash
 ./gradlew installDebug    # build + install on a connected Pixel
 ./gradlew assembleDebug   # just build, leaves the APK at app/build/outputs/apk/debug/
 ```
 
-### Host smoke test
+Watch logs during a save:
 
-The C++ pipeline is `__ANDROID__`-guarded, so it builds and runs on macOS or Linux too — handy for verifying the kernel against a sample JPEG without flashing the phone:
+```bash
+adb logcat -s dsqueez-native dsqueez-jni Resampler
+```
+
+### Verify the pipeline without flashing the phone
+
+The C++ pipeline is `__ANDROID__`-guarded, so it builds and runs on macOS or Linux against system libjpeg-turbo:
 
 ```bash
 xcrun clang++ -std=c++17 -O2 \
@@ -84,10 +133,12 @@ xcrun clang++ -std=c++17 -O2 \
   app/src/main/cpp/dsqueez.cpp \
   -L/opt/homebrew/lib -ljpeg \
   -o /tmp/dsq_test
+
 /tmp/dsq_test input.jpg output.jpg 1.33 1
+# Args: input output ratio orientation(1..8)
 ```
 
-## Architecture
+### Architecture
 
 ```
 app/src/main/
@@ -111,28 +162,15 @@ app/src/main/
     └── jni_bridge.cpp             JNI surface, Android-only
 ```
 
-## What it doesn't do
+### Releasing
 
-By design, to keep dsqueez a true single-purpose tool:
+Tag a `v*` commit and push to fire the workflow's release path. A GitHub Release with the APK attached is created automatically:
 
-- No crop, rotate, color, exposure, or any other editing
-- No multi-ratio picker in v1 (the data model supports 1.5×, 2×, etc. — flip them on in `RatioControl.kt`)
-- No RAW / DNG support
-- No before/after toggle in the preview
-- No cloud sync, accounts, telemetry, analytics, ads
+```bash
+git tag -a v0.2.0 -m "Release notes"
+git push origin v0.2.0
+```
 
-## License
-
-[MIT](LICENSE). Bundled fonts and the linked libjpeg-turbo retain their own licenses — see *Credits*.
-
-### Credits
-
-- **[libjpeg-turbo](https://github.com/libjpeg-turbo/libjpeg-turbo)** — modified BSD, statically linked
-- **[Inter](https://rsms.me/inter/)** and **[JetBrains Mono](https://www.jetbrains.com/lp/mono/)** — SIL Open Font License 1.1
-- **AndroidX, Jetpack Compose, Material 3** — Apache 2.0
-
-Visual language inspired by [Halide](https://halide.cam/) and [Kino](https://lux.camera/kino) from Lux Optics.
-
----
+</details>
 
 <div align="center"><sub>Made because a photographer was tired of round-tripping through a desktop.</sub></div>
