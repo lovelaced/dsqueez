@@ -8,7 +8,7 @@ import androidx.exifinterface.media.ExifInterface
 
 object MediaStoreSaver {
 
-    private const val ALBUM_DIR = "Pictures/dsqueez"
+    private const val ALBUM_DIR = "DCIM/dsqueez"
 
     /**
      * Publish [bytes] into MediaStore under the dsqueez album.

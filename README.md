@@ -58,7 +58,7 @@ Shoot anamorphic on the Lumix S9? Video previews come out desqueezed on-camera, 
 
 Anamorphic lenses optically squeeze a wide field of view onto a regular 3:2 sensor. To get a normal image back, you stretch it horizontally by the lens's squeeze factor — usually 1.33×, 1.5×, or 2×. The Lumix S9 desqueezes its video preview in real time, but exports stills as-shot.
 
-dsqueez runs the stretch in native C++ using a Lanczos-3 kernel against libjpeg-turbo, then writes a new JPEG with EXIF (APP1) and ICC (APP2) carried through. Output lands in `Pictures/dsqueez/`, which Google Photos surfaces as a dedicated album.
+dsqueez runs the stretch in native C++ using a Lanczos-3 kernel against libjpeg-turbo, then writes a new JPEG with EXIF (APP1) and ICC (APP2) carried through. Output lands in `DCIM/dsqueez/`, which Google Photos shows in your main feed (DCIM is the standard camera-roll location, alongside `DCIM/Camera`).
 
 <details>
 <summary>Full pipeline</summary>
