@@ -33,14 +33,14 @@ Shoot anamorphic on the Lumix S9? Video previews come out desqueezed on-camera, 
 
 ## Features
 
-- **No quality compromise.** Hand-written Lanczos-3 kernel against libjpeg-turbo — the same kernel as ImageMagick and FFmpeg. Output is bit-identical to libvips for the same operation.
-- **Every EXIF tag survives.** Camera, lens, ISO, shutter, GPS, capture date — all carried through end-to-end. Verified against real Lumix S9 + SIRUI 1.33× Anamorphic shots: nothing changes except the dimensions.
-- **Color profile preserved.** ICC profiles (sRGB, Display P3) pass through untouched via libjpeg-turbo's APP2 helpers.
-- **Orientation-aware.** Portrait shots come out portrait. EXIF rotation is baked into the pixels before resampling and the output is marked `Orientation = 1` so no downstream reader applies it twice.
-- **Share-sheet first.** Three taps from Lumix Lab to a finished file. No file picker dance, no manual export.
+- **Picks the right ratio automatically.** Reads `LensModel` from EXIF and snaps to the matching squeeze factor — SIRUI, Vazen, Cooke and most anamorphic glass announce themselves there. A `DETECTED · {LENS}` line surfaces above the picker so you can see what it's basing the suggestion on.
+- **All six native Lumix S9 ratios.** 1.30×, 1.33×, 1.50×, 1.60×, 1.80×, 2.00× — same set you pick from in-camera for video. Long-press any chip to set it as your default for photos without an EXIF lens hint.
+- **No quality compromise.** Hand-written Lanczos-3 kernel against libjpeg-turbo — same kernel as ImageMagick and FFmpeg. Output is bit-identical to libvips for this operation.
+- **Every byte of metadata survives.** EXIF (camera, lens, ISO, shutter, GPS, datetime) and ICC color profile carried through untouched. Orientation gets baked into pixels so no downstream reader rotates the file twice.
+- **Share-sheet first.** Three taps from Lumix Lab to a finished file in your camera roll. No file-picker dance.
 - **Batch processing.** Share a stack of photos, process in parallel.
-- **No ads, no accounts, no telemetry.** Local processing only. Your photos never leave the device.
-- **Photographer's interface.** Halide-inspired dark and light themes, monospace numerals on metadata, motion and haptics tuned for the Pixel.
+- **No ads, no accounts, no telemetry.** Local processing only — your photos never leave the device.
+- **Photographer's interface.** Halide-inspired dark and light themes, monospace numerals, motion and haptics tuned for the Pixel.
 
 <!-- TODO: 2×2 screenshot grid showing empty / edit / batch / saved states.
      <div align="center">
@@ -58,7 +58,7 @@ Shoot anamorphic on the Lumix S9? Video previews come out desqueezed on-camera, 
 
 Anamorphic lenses optically squeeze a wide field of view onto a regular 3:2 sensor. To get a normal image back, you stretch it horizontally by the lens's squeeze factor — usually 1.33×, 1.5×, or 2×. The Lumix S9 desqueezes its video preview in real time, but exports stills as-shot.
 
-dsqueez runs the stretch in native C++ using a Lanczos-3 kernel against libjpeg-turbo, then writes a new JPEG with EXIF (APP1) and ICC (APP2) carried through. Output lands in `DCIM/dsqueez/`, which Google Photos shows in your main feed (DCIM is the standard camera-roll location, alongside `DCIM/Camera`).
+dsqueez runs the stretch in native C++ using a Lanczos-3 kernel against libjpeg-turbo, then writes a new JPEG with EXIF (APP1) and ICC (APP2) carried through. The right squeeze factor is read from the photo's `LensModel` EXIF tag when present and falls back to your long-press-set default otherwise. Output lands in `DCIM/dsqueez/`, which Google Photos shows in your main feed (DCIM is the standard camera-roll location, alongside `DCIM/Camera`).
 
 <details>
 <summary>Full pipeline</summary>
@@ -78,7 +78,6 @@ Verified against a 4272×2848 Lumix S9 + SIRUI 1.33× Anamorphic JPEG: output is
 By design, to keep dsqueez a single-purpose tool:
 
 - No crop, rotate, color, exposure, or any other editing
-- No multi-ratio picker (the data model supports 1.5×, 2×, etc. — `RatioControl.kt` ships with 1.33× only)
 - No RAW / DNG support — Lightroom on desktop is the right tool for that
 - No HEIC — Lumix Lab exports JPEG, so dsqueez accepts JPEG
 - No cloud sync, accounts, telemetry, analytics, ads
