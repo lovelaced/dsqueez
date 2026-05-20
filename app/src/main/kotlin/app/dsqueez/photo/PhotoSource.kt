@@ -9,8 +9,10 @@ import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
 import androidx.exifinterface.media.ExifInterface
+import app.dsqueez.ui.components.SUPPORTED_RATIOS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -36,6 +38,8 @@ object PhotoSource {
         val orientation = exif?.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
             ?: ExifInterface.ORIENTATION_NORMAL
         val captureTime = exif?.let(::extractCaptureTimeMs)
+        val lensModel = exif?.getAttribute(ExifInterface.TAG_LENS_MODEL)?.trim()?.takeIf { it.isNotEmpty() }
+        val suggestedRatio = lensModel?.let(::extractRatioFromLens)
 
         PhotoMetadata(
             uri = uri,
@@ -47,7 +51,26 @@ object PhotoSource {
             pixelHeight = bounds.outHeight,
             captureTimeMillis = captureTime,
             orientation = orientation,
+            lensModel = lensModel,
+            suggestedRatio = suggestedRatio,
         )
+    }
+
+    /**
+     * Pull a supported anamorphic ratio out of a lens model string.
+     *
+     * Anamorphic lens makers announce the squeeze factor in the model name —
+     * "SIRUI 1.33x Anamorphic", "Vazen 1.8x Anamorphic", "Cooke /i 2x", etc.
+     * Match the numeric portion, then snap to the closest supported ratio.
+     * Reject matches further than 0.05 from any supported value so non-
+     * anamorphic lens names (e.g. "S-R50/65") don't get accidentally tagged.
+     */
+    private val LensRatioRegex = Regex("""(\d+(?:\.\d+)?)\s*x""", RegexOption.IGNORE_CASE)
+
+    private fun extractRatioFromLens(lensModel: String): Float? {
+        val raw = LensRatioRegex.find(lensModel)?.groupValues?.get(1)?.toFloatOrNull() ?: return null
+        val closest = SUPPORTED_RATIOS.minByOrNull { abs(it - raw) } ?: return null
+        return closest.takeIf { abs(it - raw) < 0.05f }
     }
 
     /**

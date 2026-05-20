@@ -28,6 +28,10 @@ data class PhotoMetadata(
     val captureTimeMillis: Long?,
     /** EXIF Orientation tag (1..8). Defaults to 1 (Normal). */
     val orientation: Int,
+    /** Raw LensModel EXIF tag (e.g. "SIRUI 1.33x Anamorphic"); null if absent. */
+    val lensModel: String?,
+    /** A supported ratio derived from [lensModel] when a clear match exists. */
+    val suggestedRatio: Float?,
 ) {
     val supported: Boolean get() = sourceFormat == SourceFormat.JPEG
 

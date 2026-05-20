@@ -68,7 +68,7 @@ fun BatchScreen(
 ) {
     val context = LocalContext.current
     val prefs = remember { UserPrefs(context.applicationContext) }
-    val ratio by prefs.lastRatio.collectAsState(initial = SUPPORTED_RATIOS.first())
+    val defaultRatio by prefs.defaultRatio.collectAsState(initial = SUPPORTED_RATIOS.first())
 
     val statusMap = remember { mutableStateMapOf<Uri, ItemStatus>().apply { uris.forEach { put(it, ItemStatus.QUEUED) } } }
     val metaMap = remember { mutableStateMapOf<Uri, PhotoMetadata>() }
@@ -87,7 +87,7 @@ fun BatchScreen(
         TopBar(onBack)
 
         Text(
-            text = "${uris.size} PHOTOS · ${formatRatio(ratio)}",
+            text = "${uris.size} PHOTOS · ${formatRatio(defaultRatio)}",
             style = Dsq.type.micro,
             color = Dsq.colors.textTertiary,
             modifier = Modifier.padding(horizontal = DsqSpacing.screenH, vertical = DsqSpacing.sm),
@@ -108,7 +108,7 @@ fun BatchScreen(
                     uri = uri,
                     metadata = metaMap[uri],
                     status = statusMap[uri] ?: ItemStatus.QUEUED,
-                    outputWidthForRatio = { (it.pixelWidth * ratio + 0.5f).toInt() },
+                    outputWidthForRatio = { (it.pixelWidth * defaultRatio + 0.5f).toInt() },
                 )
             }
         }
@@ -131,7 +131,7 @@ fun BatchScreen(
                                     return@withPermit
                                 }
                                 statusMap[uri] = ItemStatus.PROCESSING
-                                val res = Pipeline.process(context, md, ratio)
+                                val res = Pipeline.process(context, md, defaultRatio)
                                 statusMap[uri] = when (res) {
                                     is SaveResult.Success -> ItemStatus.DONE
                                     is SaveResult.Failure -> ItemStatus.FAIL

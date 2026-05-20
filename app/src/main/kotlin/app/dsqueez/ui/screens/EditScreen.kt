@@ -59,6 +59,7 @@ import app.dsqueez.ui.components.PrimaryButton
 import app.dsqueez.ui.components.RatioControl
 import app.dsqueez.ui.components.SUPPORTED_RATIOS
 import app.dsqueez.ui.components.formatRatio
+import kotlinx.coroutines.flow.first
 import app.dsqueez.ui.theme.Dsq
 import app.dsqueez.ui.theme.DsqMotion
 import app.dsqueez.ui.theme.DsqSpacing
@@ -80,20 +81,29 @@ fun EditScreen(
 ) {
     val context = LocalContext.current
     val prefs = remember { UserPrefs(context.applicationContext) }
-    val persistedRatio by prefs.lastRatio.collectAsState(initial = SUPPORTED_RATIOS.first())
+    // Drives the default-marker dot in the picker. Initial value is the
+    // safe fallback; the real value emits a frame later from DataStore.
+    val defaultRatio by prefs.defaultRatio.collectAsState(initial = SUPPORTED_RATIOS.first())
 
     var state by remember(uri) { mutableStateOf<EditState>(EditState.Loading) }
-    var ratio by remember(persistedRatio) { mutableStateOf(persistedRatio) }
+    // null until metadata loads. The Ready branch's invariant is non-null.
+    var ratio by remember(uri) { mutableStateOf<Float?>(null) }
 
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(uri) {
         state = EditState.Loading
+        ratio = null
         runCatching {
             val md = PhotoSource.readMetadata(context, uri)
             val preview = if (md.supported) {
                 PhotoSource.decodePreview(context, uri, md.pixelWidth, md.pixelHeight)
             } else null
+            // Pick the initial ratio: EXIF suggestion if the lens announced
+            // one, else the user's persisted default. Read defaultRatio fresh
+            // from DataStore so we don't race the collectAsState's first emit.
+            val effectiveDefault = prefs.defaultRatio.first()
+            ratio = md.suggestedRatio ?: effectiveDefault
             if (md.supported) EditState.Ready(md, preview) else EditState.Error(FailureReason.UNSUPPORTED_FORMAT)
         }.fold(
             onSuccess = { state = it },
@@ -102,25 +112,28 @@ fun EditScreen(
     }
 
     Box(modifier = modifier.fillMaxSize().background(Dsq.colors.bg)) {
+        val effectiveRatio = ratio ?: defaultRatio
         when (val s = state) {
             is EditState.Loading -> LoadingPanel(onBack)
             is EditState.Error -> ErrorPanel(s.reason, onBack)
             is EditState.Ready -> ReadyPanel(
                 metadata = s.metadata,
                 preview = s.preview,
-                ratio = ratio,
+                ratio = effectiveRatio,
+                defaultRatio = defaultRatio,
                 isSaving = false,
                 onBack = onBack,
-                onRatioChange = {
+                onRatioChange = { ratio = it },
+                onSetDefault = {
                     ratio = it
-                    scope.launch { prefs.setLastRatio(it) }
+                    scope.launch { prefs.setDefaultRatio(it) }
                 },
                 onSave = {
                     val md = s.metadata
                     val preview = s.preview
                     state = EditState.Saving(md, preview)
                     scope.launch {
-                        val result = Pipeline.process(context, md, ratio)
+                        val result = Pipeline.process(context, md, effectiveRatio)
                         state = when (result) {
                             is SaveResult.Success -> EditState.Saved(md, preview, result)
                             is SaveResult.Failure -> EditState.Error(result.reason)
@@ -131,16 +144,18 @@ fun EditScreen(
             is EditState.Saving -> ReadyPanel(
                 metadata = s.metadata,
                 preview = s.preview,
-                ratio = ratio,
+                ratio = effectiveRatio,
+                defaultRatio = defaultRatio,
                 isSaving = true,
                 onBack = onBack,
                 onRatioChange = {},
+                onSetDefault = {},
                 onSave = {},
             )
             is EditState.Saved -> SavedPanel(
                 metadata = s.metadata,
                 preview = s.preview,
-                ratio = ratio,
+                ratio = effectiveRatio,
                 onBack = onBack,
             )
         }
@@ -152,9 +167,11 @@ private fun ReadyPanel(
     metadata: PhotoMetadata,
     preview: Bitmap?,
     ratio: Float,
+    defaultRatio: Float,
     isSaving: Boolean,
     onBack: () -> Unit,
     onRatioChange: (Float) -> Unit,
+    onSetDefault: (Float) -> Unit,
     onSave: () -> Unit,
 ) {
     Column(
@@ -196,6 +213,9 @@ private fun ReadyPanel(
         RatioControl(
             selected = ratio,
             onSelected = onRatioChange,
+            onSetDefault = onSetDefault,
+            defaultRatio = defaultRatio,
+            detectedLensModel = metadata.lensModel.takeIf { metadata.suggestedRatio != null },
         )
 
         Spacer(modifier = Modifier.height(DsqSpacing.lg))

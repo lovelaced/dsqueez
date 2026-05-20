@@ -3,15 +3,20 @@ package app.dsqueez.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +40,12 @@ fun <T> SegmentedControl(
     labelFor: (T) -> String,
     modifier: Modifier = Modifier,
     labelStyle: TextStyle? = null,
+    /** Optional option to mark with a subtle dot (e.g. user's default). Only
+     *  rendered when this option is NOT currently selected — the accent fill
+     *  already signals the active selection. */
+    markedOption: T? = null,
+    /** Optional long-press handler per option (e.g. set-as-default gesture). */
+    onLongPress: ((T) -> Unit)? = null,
 ) {
     val colors = Dsq.colors
     val haptics = Dsq.haptics
@@ -51,6 +62,7 @@ fun <T> SegmentedControl(
     ) {
         options.forEachIndexed { idx, opt ->
             val isSelected = opt == selected
+            val isMarked   = opt == markedOption && !isSelected
             val bg by animateColorAsState(
                 if (isSelected) colors.surface3 else colors.surface1,
                 animationSpec = DsqMotion.springChrome(),
@@ -63,30 +75,51 @@ fun <T> SegmentedControl(
             )
             val interaction = remember { MutableInteractionSource() }
             Box(
-                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
                     .background(bg)
-                    .clickable(
+                    .combinedClickable(
                         interactionSource = interaction,
                         indication = null,
-                    ) {
-                        if (!isSelected) {
-                            haptics.detent()
-                            onSelected(opt)
-                        }
-                    }
+                        onClick = {
+                            if (!isSelected) {
+                                haptics.detent()
+                                onSelected(opt)
+                            }
+                        },
+                        onLongClick = onLongPress?.let { handler ->
+                            {
+                                haptics.thresholdActivate()
+                                handler(opt)
+                            }
+                        },
+                    )
                     .padding(horizontal = DsqSpacing.xs),
             ) {
-                Text(
-                    text = labelFor(opt),
-                    style = style,
-                    maxLines = 1,
-                    softWrap = false,
-                    color = fg,
-                    textAlign = TextAlign.Center,
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .align(Alignment.Center),
+                ) {
+                    Text(
+                        text = labelFor(opt),
+                        style = style,
+                        color = fg,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    if (isMarked) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(3.dp)
+                                .clip(CircleShape)
+                                .background(colors.accentMuted),
+                        )
+                    }
+                }
             }
             if (idx != options.lastIndex) {
                 Box(
