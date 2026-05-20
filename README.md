@@ -7,8 +7,8 @@
 *Desqueeze anamorphic stills on Android. One tap, from the share sheet.*
 
 [![Android 12+](https://img.shields.io/badge/Android-12%2B-3DDC84?logo=android&logoColor=white&style=flat-square)](https://www.android.com/)
-[![Build APK](https://img.shields.io/github/actions/workflow/status/USER/REPO/build.yml?style=flat-square&label=build)](../../actions)
-[![Latest release](https://img.shields.io/github/v/release/USER/REPO?style=flat-square&display_name=tag)](../../releases)
+[![Build APK](https://img.shields.io/github/actions/workflow/status/lovelaced/dsqueez/build.yml?style=flat-square&label=build)](../../actions)
+[![Latest release](https://img.shields.io/github/v/release/lovelaced/dsqueez?style=flat-square&display_name=tag)](../../releases)
 [![License](https://img.shields.io/badge/license-TBD-lightgrey?style=flat-square)](#license)
 
 </div>
