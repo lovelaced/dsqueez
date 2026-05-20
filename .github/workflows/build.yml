@@ -1,0 +1,99 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # required for the Release step on tag pushes
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        # No `packages` here — AGP's auto-download will pull what the build asks for
+        # (platforms;android-36, build-tools, etc.) on first use.
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.0'
+
+      - name: Bootstrap Gradle wrapper
+        # The wrapper jar isn't committed (kept lean). CI generates it on each run.
+        # Open the project in Android Studio for the same bootstrap locally, or
+        # run `gradle wrapper --gradle-version 9.0` once after cloning.
+        run: gradle wrapper --gradle-version 9.0
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Stage APK with a friendly name
+        id: stage
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          SRC=$(find app/build/outputs/apk/debug -name '*.apk' | head -n1)
+          if [[ -z "$SRC" ]]; then
+            echo "::error::no APK produced under app/build/outputs/apk/debug"
+            exit 1
+          fi
+          SHORT="${GITHUB_SHA::7}"
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF##refs/tags/}"
+          else
+            VERSION="${SHORT}"
+          fi
+          DEST="out/d-squeez-${VERSION}.apk"
+          cp "$SRC" "$DEST"
+          echo "apk=$DEST" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          ls -lh "$DEST"
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: d-squeez-${{ steps.stage.outputs.version }}
+          path: ${{ steps.stage.outputs.apk }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Create GitHub Release (tag push only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.stage.outputs.apk }}
+          generate_release_notes: true
+          body: |
+            ## D-Squeez ${{ steps.stage.outputs.version }}
+
+            Download the APK below and sideload it onto your Pixel.
+
+            **Install steps:**
+            1. Download the `.apk` to the phone.
+            2. Open it from your file manager — Android will prompt to allow your downloader (Drive, Chrome, etc.) to install unknown apps. Approve once.
+            3. Install. If you have a previous CI build installed, **uninstall it first** — debug builds use a per-CI keystore so signatures don't match between runs.
+
+            ## Caveats
+
+            - Debug-signed (per-run keystore). Stable cross-build signing requires a committed keystore + repo secrets.
+            - Without vendored libvips binaries, the UI works end-to-end but `Save` reports "Processing engine not installed". See README §Native processing.

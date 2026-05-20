@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">D-Squeez</string>
+    <string name="share_label">D-Squeez</string>
+
+    <!-- Empty state -->
+    <string name="empty_hero">Squeezed.</string>
+    <string name="empty_subtitle">Share a photo to begin · or tap to import</string>
+    <string name="empty_cta">Choose Photo</string>
+
+    <!-- Edit screen -->
+    <string name="ratio_label">RATIO</string>
+    <string name="output_label">OUTPUT</string>
+    <string name="source_label">SOURCE</string>
+    <string name="format_label">FORMAT</string>
+
+    <string name="save">Save</string>
+    <string name="saving">Saving…</string>
+    <string name="saved">Saved</string>
+
+    <!-- Options sheet -->
+    <string name="options_title">Options</string>
+    <string name="option_output_format">OUTPUT FORMAT</string>
+    <string name="option_match_input">Match Input</string>
+    <string name="option_always_jpeg">Always JPEG</string>
+    <string name="option_exif">EXIF</string>
+    <string name="option_exif_value">Preserve Original</string>
+
+    <!-- Errors -->
+    <string name="error_unsupported">Unsupported file type</string>
+    <string name="error_native_missing">Processing engine not installed</string>
+    <string name="error_save_failed">Save failed</string>
+
+    <!-- Batch -->
+    <string name="batch_save_all">Save All</string>
+    <string name="batch_status_queued">QUEUED</string>
+    <string name="batch_status_processing">…</string>
+    <string name="batch_status_done">DONE</string>
+    <string name="batch_status_fail">FAIL</string>
+</resources>

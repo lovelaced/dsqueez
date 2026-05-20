@@ -1,0 +1,131 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+
+// Native build is gated on the presence of libvips prebuilts. Until the .so files
+// are vendored under src/main/jniLibs/arm64-v8a/, the app builds (and runs!) with
+// the JNI bridge absent — Vips.tryLoad() catches the missing library, and the save
+// path surfaces a "Processing engine not installed" error. This lets you iterate
+// on the UI before the native pipeline is in place.
+val nativeReady = file("src/main/jniLibs/arm64-v8a/libvips.so").exists()
+
+android {
+    namespace = "app.dsqueez"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "app.dsqueez"
+        minSdk = 31
+        targetSdk = 36
+        versionCode = 1
+        versionName = "0.1.0"
+
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
+
+        if (nativeReady) {
+            externalNativeBuild {
+                cmake {
+                    cppFlags += listOf("-std=c++17", "-fvisibility=hidden", "-O3")
+                    arguments += listOf("-DANDROID_STL=c++_shared")
+                }
+            }
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            kotlin.srcDirs("src/main/kotlin")
+            jniLibs.srcDirs("src/main/jniLibs")
+        }
+    }
+
+    if (nativeReady) {
+        externalNativeBuild {
+            cmake {
+                path = file("src/main/cpp/CMakeLists.txt")
+                version = "3.22.1"
+            }
+        }
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-opt-in=kotlin.RequiresOptIn",
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+        )
+    }
+
+    buildTypes {
+        debug {
+            isDebuggable = true
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+                "/META-INF/{AL2.0,LGPL2.1}",
+            )
+        }
+        jniLibs {
+            // libvips ships transitive .so deps; don't dedupe.
+            useLegacyPackaging = false
+        }
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    // Compose BOM aligns transitive versions of every other Compose artifact.
+    implementation(platform(libs.compose.bom))
+    androidTestImplementation(platform(libs.compose.bom))
+
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
+    implementation(libs.compose.ui.text.google.fonts)
+    implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
+
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.lifecycle.runtime)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.exifinterface)
+
+    implementation(libs.kotlinx.coroutines.android)
+}

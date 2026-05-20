@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Adaptive launcher foreground (108dp canvas, 72dp safe zone centered).
+    Scaled to fit comfortably inside the safe zone with breathing room.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:translateX="22"
+        android:translateY="22"
+        android:scaleX="1.0"
+        android:scaleY="1.0">
+
+        <path
+            android:strokeColor="#E8B23A"
+            android:strokeWidth="2.4"
+            android:fillColor="@android:color/transparent"
+            android:pathData="M 6 32
+                              C 6 22, 22 16, 32 16
+                              C 42 16, 58 22, 58 32
+                              C 58 42, 42 48, 32 48
+                              C 22 48, 6 42, 6 32 Z" />
+
+        <path
+            android:fillColor="#E8B23A"
+            android:pathData="M 31 22 L 33 22 L 33 42 L 31 42 Z" />
+    </group>
+</vector>

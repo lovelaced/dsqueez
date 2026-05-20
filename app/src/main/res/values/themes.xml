@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Two themes:
+        * Theme.Dsqueez.Splash — applied via manifest until the activity is up; provides
+          a near-black background and centers the launcher icon.
+        * Theme.Dsqueez — empty Material3 theme. Real theming is in Compose
+          (DsqueezTheme.kt). We only need the platform theme to defer to Compose.
+    -->
+
+    <style name="Theme.Dsqueez" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
+    </style>
+
+    <style name="Theme.Dsqueez.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_lens_glyph</item>
+        <item name="postSplashScreenTheme">@style/Theme.Dsqueez</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+</resources>

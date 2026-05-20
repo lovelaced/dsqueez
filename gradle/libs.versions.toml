@@ -1,0 +1,55 @@
+[versions]
+# Build
+agp = "9.2.0"
+kotlin = "2.3.10"
+ksp = "2.3.10-2.0.0"
+
+# Compose
+composeBom = "2026.05.00"
+composeMaterial3 = "1.5.0-alpha19"  # M3 Expressive (motion physics, shape morphing)
+
+# AndroidX
+activityCompose = "1.12.0-rc01"
+coreKtx = "1.16.0"
+lifecycle = "2.10.0"
+splashScreen = "1.2.0-rc01"
+datastore = "1.2.0"
+exifinterface = "1.4.2"
+
+# Kotlin / coroutines
+coroutines = "1.10.2"
+
+# Build / tooling
+desugar = "2.1.5"
+
+[libraries]
+# Compose
+compose-bom              = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-ui               = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-graphics      = { group = "androidx.compose.ui", name = "ui-graphics" }
+compose-ui-tooling       = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+compose-foundation       = { group = "androidx.compose.foundation", name = "foundation" }
+compose-material3        = { group = "androidx.compose.material3", name = "material3", version.ref = "composeMaterial3" }
+compose-material-icons   = { group = "androidx.compose.material", name = "material-icons-extended" }
+compose-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts" }
+
+# AndroidX
+androidx-activity-compose   = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-core-ktx           = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen  = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashScreen" }
+androidx-lifecycle-runtime  = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-datastore          = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-exifinterface      = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
+
+# Kotlin
+kotlinx-coroutines-android  = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+# Desugaring (java.time on older API levels — harmless on 31+)
+desugar-jdk-libs            = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android      = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose      = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

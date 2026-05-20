@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Themed launcher icon (Android 13+ monochrome). System tints this with
+    the user's wallpaper-derived color when "themed icons" is enabled.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="22"
+        android:translateY="22">
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2.4"
+            android:fillColor="@android:color/transparent"
+            android:pathData="M 6 32
+                              C 6 22, 22 16, 32 16
+                              C 42 16, 58 22, 58 32
+                              C 58 42, 42 48, 32 48
+                              C 22 48, 6 42, 6 32 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 31 22 L 33 22 L 33 42 L 31 42 Z" />
+    </group>
+</vector>

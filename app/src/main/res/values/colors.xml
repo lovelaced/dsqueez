@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Only the bare resources needed by the platform theme + splash + launcher.
+         All in-app colors live in Compose (ui/theme/Color.kt). -->
+    <color name="splash_bg">#0A0A0B</color>
+    <color name="launcher_bg">#0A0A0B</color>
+    <color name="accent_amber">#E8B23A</color>
+</resources>

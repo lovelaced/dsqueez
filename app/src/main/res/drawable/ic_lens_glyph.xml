@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The anamorphic lens mark. A horizontally elongated lozenge (the desqueezed
+    aspect) with a narrow vertical bar inside it (the squeezed origin).
+    Tells the whole story of the app in one mark.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+
+    <!-- Outer horizontal lozenge (desqueezed frame) — drawn as four cubic arcs -->
+    <path
+        android:strokeColor="#E8B23A"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M 6 32
+                          C 6 22, 22 16, 32 16
+                          C 42 16, 58 22, 58 32
+                          C 58 42, 42 48, 32 48
+                          C 22 48, 6 42, 6 32 Z" />
+
+    <!-- Inner vertical bar (squeezed axis) — the "before" state, calibrated -->
+    <path
+        android:fillColor="#E8B23A"
+        android:pathData="M 31 22 L 33 22 L 33 42 L 31 42 Z" />
+</vector>
