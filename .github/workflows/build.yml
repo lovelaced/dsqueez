@@ -36,13 +36,13 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.0'
+          gradle-version: '9.5.1'
 
       - name: Bootstrap Gradle wrapper
         # The wrapper jar isn't committed (kept lean). CI generates it on each run.
         # Open the project in Android Studio for the same bootstrap locally, or
-        # run `gradle wrapper --gradle-version 9.0` once after cloning.
-        run: gradle wrapper --gradle-version 9.0
+        # run `gradle wrapper --gradle-version 9.5.1` once after cloning.
+        run: gradle wrapper --gradle-version 9.5.1
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace

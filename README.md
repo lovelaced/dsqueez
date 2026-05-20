@@ -59,7 +59,7 @@ Prereqs: Android Studio (Jellyfish 2026.x or newer), or JDK 17 + Android SDK pla
 
 ```bash
 # From a fresh clone — one-time
-gradle wrapper --gradle-version 9.0   # or just open the project in Android Studio
+gradle wrapper --gradle-version 9.5.1   # or just open the project in Android Studio
 
 # Build & install on a connected Pixel
 ./gradlew installDebug
