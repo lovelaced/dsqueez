@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -254,7 +255,7 @@ private fun SavedPanel(
                         sourceHeight = metadata.pixelHeight,
                         ratio = ratio,
                         revealAnimated = false,
-                        modifier = Modifier.graphicsLayerAlpha(alpha.value),
+                        modifier = Modifier.alpha(alpha.value),
                     )
                 }
                 Box(
@@ -447,5 +448,3 @@ private fun buildMetadataItems(
     )
 }
 
-private fun Modifier.graphicsLayerAlpha(alpha: Float): Modifier =
-    this.then(androidx.compose.ui.graphics.graphicsLayer { this.alpha = alpha })
