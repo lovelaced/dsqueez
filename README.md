@@ -58,11 +58,8 @@ dsqueez runs the stretch in native code via libvips' [Lanczos-3](https://en.wiki
 Prereqs: Android Studio (Jellyfish 2026.x or newer), or JDK 17 + Android SDK platform 36 if you build from the command line. For the native pipeline, also install **NDK** and **CMake 3.22.1** via Studio's *SDK Manager → SDK Tools*.
 
 ```bash
-# From a fresh clone — one-time
-gradle wrapper --gradle-version 9.5.1   # or just open the project in Android Studio
-
-# Build & install on a connected Pixel
-./gradlew installDebug
+./gradlew installDebug    # build + install on a connected Pixel
+./gradlew assembleDebug   # just build, leaves the APK at app/build/outputs/apk/debug/
 ```
 
 ### Native processing (libvips)
