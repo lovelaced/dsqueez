@@ -51,5 +51,5 @@ desugar-jdk-libs            = { group = "com.android.tools", name = "desugar_jdk
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android      = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Kotlin is built into AGP 9.0+ — only the Compose Compiler plugin is applied separately.
 kotlin-compose      = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

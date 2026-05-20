@@ -1,6 +1,9 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    // No `kotlin-android` plugin — AGP 9.0+ ships Kotlin support built-in.
+    // See https://kotl.in/gradle/agp-built-in-kotlin
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -63,15 +66,6 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += listOf(
-            "-opt-in=kotlin.RequiresOptIn",
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-        )
-    }
-
     buildTypes {
         debug {
             isDebuggable = true
@@ -100,6 +94,19 @@ android {
             // libvips ships transitive .so deps; don't dedupe.
             useLegacyPackaging = false
         }
+    }
+}
+
+// AGP 9.0+ exposes the Kotlin extension at the top level. Configure compiler
+// options here rather than inside `android.kotlinOptions` (deprecated/removed).
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        freeCompilerArgs.addAll(
+            "-opt-in=kotlin.RequiresOptIn",
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+        )
     }
 }
 
