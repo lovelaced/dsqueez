@@ -12,7 +12,7 @@ import android.os.Build
  * - ACTION_SEND: single URI in EXTRA_STREAM
  * - ACTION_SEND_MULTIPLE: list in EXTRA_STREAM
  *
- * Filters to `image/*` MIME types only.
+ * Only image MIME types are accepted.
  */
 fun parseIncomingUris(intent: Intent?): List<Uri> {
     if (intent == null) return emptyList()
