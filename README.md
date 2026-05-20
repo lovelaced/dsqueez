@@ -9,7 +9,7 @@
 [![Android 12+](https://img.shields.io/badge/Android-12%2B-3DDC84?logo=android&logoColor=white&style=flat-square)](https://www.android.com/)
 [![Build APK](https://img.shields.io/github/actions/workflow/status/lovelaced/dsqueez/build.yml?style=flat-square&label=build)](../../actions)
 [![Latest release](https://img.shields.io/github/v/release/lovelaced/dsqueez?style=flat-square&display_name=tag)](../../releases)
-[![License](https://img.shields.io/badge/license-TBD-lightgrey?style=flat-square)](#license)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
 </div>
 
@@ -122,7 +122,7 @@ By design, to keep dsqueez a true single-purpose tool:
 
 ## License
 
-License: TBD. The choice intersects with the dynamically-linked LGPL libvips and SIL-licensed bundled fonts; MIT or Apache 2.0 are the likely candidates. Open an issue if you'd like to weigh in before a tag is cut.
+[MIT](LICENSE). The dynamically-linked LGPL libvips and SIL-licensed fonts retain their respective licenses — see *Credits* below.
 
 ### Credits
 
