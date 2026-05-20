@@ -26,7 +26,7 @@ object Pipeline {
      * The full single-photo pipeline:
      *   1. Read source bytes from the content URI.
      *   2. Hand to libvips for desqueeze + re-encode (EXIF + ICC carried natively).
-     *   3. Apply MediaStore IS_PENDING flow, write to the D-Squeez album.
+     *   3. Apply MediaStore IS_PENDING flow, write to the dsqueez album.
      *   4. Patch geometry EXIF tags via AndroidX ExifInterface (belt + braces).
      */
     suspend fun process(

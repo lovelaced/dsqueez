@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "D-Squeez"
+rootProject.name = "dsqueez"
 include(":app")

@@ -380,7 +380,7 @@ private fun BottomSavedStrip() {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "SAVED · Pictures/D-Squeez",
+            text = "SAVED · Pictures/dsqueez",
             style = Dsq.type.numMicro,
             color = colors.success,
         )

@@ -63,7 +63,7 @@ jobs:
           else
             VERSION="${SHORT}"
           fi
-          DEST="out/d-squeez-${VERSION}.apk"
+          DEST="out/dsqueez-${VERSION}.apk"
           cp "$SRC" "$DEST"
           echo "apk=$DEST" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -72,7 +72,7 @@ jobs:
       - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: d-squeez-${{ steps.stage.outputs.version }}
+          name: dsqueez-${{ steps.stage.outputs.version }}
           path: ${{ steps.stage.outputs.apk }}
           if-no-files-found: error
           retention-days: 90
@@ -84,7 +84,7 @@ jobs:
           files: ${{ steps.stage.outputs.apk }}
           generate_release_notes: true
           body: |
-            ## D-Squeez ${{ steps.stage.outputs.version }}
+            ## dsqueez ${{ steps.stage.outputs.version }}
 
             Download the APK below and sideload it onto your Pixel.
 

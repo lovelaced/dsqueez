@@ -9,10 +9,10 @@ import app.dsqueez.nativebridge.Vips
 
 object MediaStoreSaver {
 
-    private const val ALBUM_DIR = "Pictures/D-Squeez"
+    private const val ALBUM_DIR = "Pictures/dsqueez"
 
     /**
-     * Publish [bytes] into MediaStore under the D-Squeez album.
+     * Publish [bytes] into MediaStore under the dsqueez album.
      *
      * Uses IS_PENDING flow so the file never appears half-written in Google Photos.
      * Propagates DATE_TAKEN from the source EXIF so the desqueezed copy sorts

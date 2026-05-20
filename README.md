@@ -1,10 +1,10 @@
-# D-Squeez
+# dsqueez
 
 A single-purpose Android tool that does one thing: horizontally desqueezes 1.33× anamorphic still photos. Built for the Lumix S9 + anamorphic adapter → Lumix Lab → phone workflow, where stills arrive squeezed and there's no native fix on the camera or in Lab.
 
-- Share-sheet target: from Lumix Lab (or any gallery), Share → D-Squeez → tap Save.
+- Share-sheet target: from Lumix Lab (or any gallery), Share → dsqueez → tap Save.
 - Pure desqueeze: pixel-accurate horizontal Lanczos-3 stretch via libvips. EXIF, ICC profile, capture date — all preserved.
-- Saves to a "D-Squeez" album in Google Photos (`Pictures/D-Squeez/`).
+- Saves to a "dsqueez" album in Google Photos (`Pictures/dsqueez/`).
 - Light/dark following system. Halide-inspired aesthetic.
 - Built for Android 16 / Pixel 6 Pro (`minSdk 31`, `arm64-v8a` only).
 
@@ -55,7 +55,7 @@ The app gracefully degrades if the prebuilts aren't present: the UI loads, you c
 A GitHub Action at `.github/workflows/build.yml` builds a debug APK on every push and PR. To grab a build:
 
 1. Push to GitHub → wait for the **Build APK** workflow to finish.
-2. Open the run from the *Actions* tab → scroll to *Artifacts* → download `d-squeez-<sha>.apk`.
+2. Open the run from the *Actions* tab → scroll to *Artifacts* → download `dsqueez-<sha>.apk`.
 3. On your phone, open the APK from your file manager (Drive, Chrome). Approve "Install unknown apps" if Android asks.
 4. **When updating: uninstall the previous version first.** Debug-signed APKs use a per-CI keystore so signatures don't match between runs.
 
@@ -88,7 +88,7 @@ adb logcat -s dsqueez-native dsqueez-jni Vips
 
 After installing and running a test save:
 
-1. `adb pull /sdcard/Pictures/D-Squeez/IMG_xxx_dsq.jpg`
+1. `adb pull /sdcard/Pictures/dsqueez/IMG_xxx_dsq.jpg`
 2. Open the file in Lightroom or `exiftool -a IMG_xxx_dsq.jpg`. Confirm:
    - **Dimensions** = source width × 1.33 (rounded) × source height
    - **Camera / Lens / ISO / Shutter / GPS / DateTimeOriginal** — all intact, copied from source

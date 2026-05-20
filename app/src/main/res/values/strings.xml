@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">D-Squeez</string>
-    <string name="share_label">D-Squeez</string>
+    <string name="app_name">dsqueez</string>
+    <string name="share_label">dsqueez</string>
 
     <!-- Empty state -->
     <string name="empty_hero">Squeezed.</string>
