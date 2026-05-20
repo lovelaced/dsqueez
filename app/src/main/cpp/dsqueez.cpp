@@ -59,10 +59,22 @@ Result desqueeze_buffer(
         return result;
     }
 
+    // Bake EXIF orientation into pixels before any further processing. We force
+    // Orientation=1 on the output (see MediaStoreSaver), so without this step a
+    // portrait JPEG (Orientation=6) would land sideways in Lightroom.
+    VipsImage* upright = nullptr;
+    if (vips_autorot(in, &upright, nullptr) != 0) {
+        result.error = std::string("autorot failed: ") + vips_error_buffer();
+        vips_error_clear();
+        g_object_unref(in);
+        return result;
+    }
+    g_object_unref(in);
+
     VipsImage* out = nullptr;
     VipsInterpolate* lanczos = vips_interpolate_new("lanczos3");
     if (!lanczos) {
-        g_object_unref(in);
+        g_object_unref(upright);
         result.error = "could not create lanczos3 interpolator";
         return result;
     }
@@ -70,7 +82,7 @@ Result desqueeze_buffer(
     // vips_affine takes a 2x2 matrix: [a b ; c d]. For a horizontal stretch
     // by `ratio` and vertical identity, that's [ratio 0 ; 0 1].
     int affine_rc = vips_affine(
-        in, &out,
+        upright, &out,
         (double)ratio, 0.0,
         0.0,          1.0,
         "interpolate", lanczos,
@@ -78,7 +90,7 @@ Result desqueeze_buffer(
     );
 
     g_object_unref(lanczos);
-    g_object_unref(in);
+    g_object_unref(upright);
 
     if (affine_rc != 0 || !out) {
         result.error = std::string("affine failed: ") + vips_error_buffer();

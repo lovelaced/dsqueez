@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +34,7 @@ fun PhotoFrame(
     ratio: Float,
     modifier: Modifier = Modifier,
     revealAnimated: Boolean = true,
+    calibrationLineProgress: Float = 0f,
 ) {
     val colors = Dsq.colors
     val imageBitmap: ImageBitmap? = remember(bitmap) { bitmap?.asImageBitmap() }
@@ -77,6 +79,32 @@ fun PhotoFrame(
                     contentScale = ContentScale.Fit,
                 )
             }
+
+            if (calibrationLineProgress > 0f) {
+                CalibrationLine(
+                    progress = calibrationLineProgress,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(DsqSpacing.hairline)
+                        .align(Alignment.BottomCenter),
+                )
+            }
         }
+    }
+}
+
+/**
+ * The 1px amber hairline that traces beneath the photo during the desqueeze.
+ * Grows from center outward, matching the visual metaphor of the stretch.
+ */
+@Composable
+private fun CalibrationLine(progress: Float, modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(progress.coerceIn(0f, 1f))
+                .height(DsqSpacing.hairline)
+                .background(Dsq.colors.accent),
+        )
     }
 }

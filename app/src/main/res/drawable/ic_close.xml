@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phosphor X (Regular weight). Two clean diagonals, round caps.
+    Designed for Compose Icon(painter = ..., tint = ...) — source color is
+    full-opacity white so Compose's ColorFilter.tint() can recolor it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="20"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M200,56 L56,200 M200,200 L56,56" />
+</vector>

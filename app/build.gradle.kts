@@ -16,7 +16,10 @@ val nativeReady = file("src/main/jniLibs/arm64-v8a/libvips.so").exists()
 
 android {
     namespace = "app.dsqueez"
-    compileSdk = 36
+    // compileSdk = 37 follows the AndroidX 1.19/Compose 1.12 alpha line we're on;
+    // targetSdk stays at 36 (Android 16) since that's what your Pixel actually runs.
+    // Decoupling these is the supported pattern (see Android API decoupling docs).
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "app.dsqueez"
@@ -121,7 +124,6 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.foundation)
     implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons)
     implementation(libs.compose.ui.text.google.fonts)
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)

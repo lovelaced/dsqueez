@@ -25,10 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -186,13 +184,14 @@ private fun ReadyPanel(
             DesqueezeStretch(
                 ratio = ratio,
                 playOnAppear = true,
-            ) { animatedRatio ->
+            ) { animatedRatio, lineProgress ->
                 PhotoFrame(
                     bitmap = preview,
                     sourceWidth = metadata.pixelWidth,
                     sourceHeight = metadata.pixelHeight,
                     ratio = animatedRatio,
                     revealAnimated = true,
+                    calibrationLineProgress = lineProgress,
                 )
             }
         }
@@ -291,17 +290,17 @@ private fun TopBar(onBack: () -> Unit, onOpenOptions: (() -> Unit)?) {
             .padding(horizontal = DsqSpacing.screenH, vertical = DsqSpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(icon = Icons.Outlined.Close, contentDescription = "Close", onClick = onBack)
+        IconButton(iconRes = R.drawable.ic_close, contentDescription = "Close", onClick = onBack)
         Spacer(modifier = Modifier.weight(1f))
         if (onOpenOptions != null) {
-            IconButton(icon = Icons.Outlined.Tune, contentDescription = "Options", onClick = onOpenOptions)
+            IconButton(iconRes = R.drawable.ic_options, contentDescription = "Options", onClick = onOpenOptions)
         }
     }
 }
 
 @Composable
 private fun IconButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconRes: Int,
     contentDescription: String,
     onClick: () -> Unit,
 ) {
@@ -317,7 +316,7 @@ private fun IconButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = icon,
+            painter = painterResource(iconRes),
             contentDescription = contentDescription,
             tint = Dsq.colors.textSecondary,
             modifier = Modifier.size(20.dp),
