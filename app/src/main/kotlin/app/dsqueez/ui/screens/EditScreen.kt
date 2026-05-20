@@ -49,7 +49,6 @@ import app.dsqueez.photo.PhotoMetadata
 import app.dsqueez.photo.PhotoSource
 import app.dsqueez.photo.Pipeline
 import app.dsqueez.photo.SaveResult
-import app.dsqueez.photo.SourceFormat
 import app.dsqueez.settings.UserPrefs
 import app.dsqueez.ui.anim.DesqueezeStretch
 import app.dsqueez.ui.components.HairlineProgress
@@ -80,11 +79,10 @@ fun EditScreen(
 ) {
     val context = LocalContext.current
     val prefs = remember { UserPrefs(context.applicationContext) }
-    val exportAsJpeg by prefs.exportAsJpeg.collectAsState(initial = true)
+    val persistedRatio by prefs.lastRatio.collectAsState(initial = SUPPORTED_RATIOS.first())
 
     var state by remember(uri) { mutableStateOf<EditState>(EditState.Loading) }
-    var optionsOpen by remember { mutableStateOf(false) }
-    var ratio by remember { mutableStateOf(SUPPORTED_RATIOS.first()) }
+    var ratio by remember(persistedRatio) { mutableStateOf(persistedRatio) }
 
     val scope = rememberCoroutineScope()
 
@@ -110,17 +108,18 @@ fun EditScreen(
                 metadata = s.metadata,
                 preview = s.preview,
                 ratio = ratio,
-                exportAsJpeg = exportAsJpeg,
                 isSaving = false,
                 onBack = onBack,
-                onRatioChange = { ratio = it },
-                onOpenOptions = { optionsOpen = true },
+                onRatioChange = {
+                    ratio = it
+                    scope.launch { prefs.setLastRatio(it) }
+                },
                 onSave = {
                     val md = s.metadata
                     val preview = s.preview
                     state = EditState.Saving(md, preview)
                     scope.launch {
-                        val result = Pipeline.process(context, md, ratio, exportAsJpeg)
+                        val result = Pipeline.process(context, md, ratio)
                         state = when (result) {
                             is SaveResult.Success -> EditState.Saved(md, preview, result)
                             is SaveResult.Failure -> EditState.Error(result.reason)
@@ -132,11 +131,9 @@ fun EditScreen(
                 metadata = s.metadata,
                 preview = s.preview,
                 ratio = ratio,
-                exportAsJpeg = exportAsJpeg,
                 isSaving = true,
                 onBack = onBack,
-                onRatioChange = { ratio = it },
-                onOpenOptions = {},
+                onRatioChange = {},
                 onSave = {},
             )
             is EditState.Saved -> SavedPanel(
@@ -144,14 +141,6 @@ fun EditScreen(
                 preview = s.preview,
                 ratio = ratio,
                 onBack = onBack,
-            )
-        }
-
-        if (optionsOpen) {
-            OptionsSheet(
-                exportAsJpeg = exportAsJpeg,
-                onExportAsJpegChange = { scope.launch { prefs.setExportAsJpeg(it) } },
-                onDismiss = { optionsOpen = false },
             )
         }
     }
@@ -162,17 +151,15 @@ private fun ReadyPanel(
     metadata: PhotoMetadata,
     preview: Bitmap?,
     ratio: Float,
-    exportAsJpeg: Boolean,
     isSaving: Boolean,
     onBack: () -> Unit,
     onRatioChange: (Float) -> Unit,
-    onOpenOptions: () -> Unit,
     onSave: () -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
-        TopBar(onBack = onBack, onOpenOptions = onOpenOptions)
+        TopBar(onBack = onBack)
 
         Spacer(modifier = Modifier.height(DsqSpacing.md))
 
@@ -200,7 +187,7 @@ private fun ReadyPanel(
         Spacer(modifier = Modifier.height(DsqSpacing.md))
 
         MetadataStrip(
-            items = buildMetadataItems(metadata, ratio, exportAsJpeg),
+            items = buildMetadataItems(metadata, ratio),
         )
 
         Spacer(modifier = Modifier.height(DsqSpacing.md))
@@ -237,7 +224,7 @@ private fun SavedPanel(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(onBack = onBack, onOpenOptions = null)
+        TopBar(onBack = onBack)
 
         Spacer(modifier = Modifier.height(DsqSpacing.md))
 
@@ -275,15 +262,14 @@ private fun SavedPanel(
         }
 
         Spacer(modifier = Modifier.height(DsqSpacing.md))
-        MetadataStrip(items = buildMetadataItems(metadata, ratio, exportAsJpeg = true))
+        MetadataStrip(items = buildMetadataItems(metadata, ratio))
         Spacer(modifier = Modifier.height(DsqSpacing.lg))
         BottomSavedStrip()
     }
 }
 
 @Composable
-private fun TopBar(onBack: () -> Unit, onOpenOptions: (() -> Unit)?) {
-    val colors = Dsq.colors
+private fun TopBar(onBack: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -292,10 +278,6 @@ private fun TopBar(onBack: () -> Unit, onOpenOptions: (() -> Unit)?) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(iconRes = R.drawable.ic_close, contentDescription = "Close", onClick = onBack)
-        Spacer(modifier = Modifier.weight(1f))
-        if (onOpenOptions != null) {
-            IconButton(iconRes = R.drawable.ic_options, contentDescription = "Options", onClick = onOpenOptions)
-        }
     }
 }
 
@@ -390,7 +372,7 @@ private fun BottomSavedStrip() {
 @Composable
 private fun LoadingPanel(onBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(onBack = onBack, onOpenOptions = null)
+        TopBar(onBack = onBack)
         Spacer(modifier = Modifier.weight(1f))
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             HairlineProgress(modifier = Modifier.padding(horizontal = DsqSpacing.xxxl))
@@ -408,7 +390,7 @@ private fun ErrorPanel(reason: FailureReason, onBack: () -> Unit) {
             stringResource(R.string.error_save_failed)
     }
     Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(onBack = onBack, onOpenOptions = null)
+        TopBar(onBack = onBack)
         Spacer(modifier = Modifier.weight(1f))
         Column(
             modifier = Modifier
@@ -435,16 +417,14 @@ private fun ErrorPanel(reason: FailureReason, onBack: () -> Unit) {
 private fun buildMetadataItems(
     metadata: PhotoMetadata,
     ratio: Float,
-    exportAsJpeg: Boolean,
 ): List<MetadataItem> {
     val outW = metadata.desqueezedWidth(ratio)
-    val outH = metadata.pixelHeight
-    val outFormatLabel = if (exportAsJpeg || metadata.sourceFormat != SourceFormat.HEIC) "JPEG" else "HEIC"
+    val outH = metadata.uprightHeight
     return listOf(
-        MetadataItem("SOURCE", "${metadata.pixelWidth}×${metadata.pixelHeight}"),
-        MetadataItem("RATIO", "${"%.2f".format(ratio)}×"),
+        MetadataItem("SOURCE", "${metadata.uprightWidth}×${metadata.uprightHeight}"),
+        MetadataItem("RATIO",  "${"%.2f".format(ratio)}×"),
         MetadataItem("OUTPUT", "${outW}×$outH"),
-        MetadataItem("FORMAT", outFormatLabel),
+        MetadataItem("FORMAT", "JPEG"),
     )
 }
 

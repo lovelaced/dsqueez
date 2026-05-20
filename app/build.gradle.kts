@@ -7,13 +7,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// Native build is gated on the presence of libvips prebuilts. Until the .so files
-// are vendored under src/main/jniLibs/arm64-v8a/, the app builds (and runs!) with
-// the JNI bridge absent — Vips.tryLoad() catches the missing library, and the save
-// path surfaces a "Processing engine not installed" error. This lets you iterate
-// on the UI before the native pipeline is in place.
-val nativeReady = file("src/main/jniLibs/arm64-v8a/libvips.so").exists()
-
 android {
     namespace = "app.dsqueez"
     // compileSdk = 37 follows the AndroidX 1.19/Compose 1.12 alpha line we're on;
@@ -32,12 +25,10 @@ android {
             abiFilters += "arm64-v8a"
         }
 
-        if (nativeReady) {
-            externalNativeBuild {
-                cmake {
-                    cppFlags += listOf("-std=c++17", "-fvisibility=hidden", "-O3")
-                    arguments += listOf("-DANDROID_STL=c++_shared")
-                }
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++17", "-fvisibility=hidden", "-O3")
+                arguments += listOf("-DANDROID_STL=c++_shared")
             }
         }
     }
@@ -45,16 +36,13 @@ android {
     sourceSets {
         getByName("main") {
             kotlin.srcDirs("src/main/kotlin")
-            jniLibs.srcDirs("src/main/jniLibs")
         }
     }
 
-    if (nativeReady) {
-        externalNativeBuild {
-            cmake {
-                path = file("src/main/cpp/CMakeLists.txt")
-                version = "3.22.1"
-            }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
 

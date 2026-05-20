@@ -67,8 +67,7 @@ fun BatchScreen(
 ) {
     val context = LocalContext.current
     val prefs = remember { UserPrefs(context.applicationContext) }
-    val exportAsJpeg by prefs.exportAsJpeg.collectAsState(initial = true)
-    val ratio = SUPPORTED_RATIOS.first()
+    val ratio by prefs.lastRatio.collectAsState(initial = SUPPORTED_RATIOS.first())
 
     val statusMap = remember { mutableStateMapOf<Uri, ItemStatus>().apply { uris.forEach { put(it, ItemStatus.QUEUED) } } }
     val metaMap = remember { mutableStateMapOf<Uri, PhotoMetadata>() }
@@ -131,7 +130,7 @@ fun BatchScreen(
                                     return@withPermit
                                 }
                                 statusMap[uri] = ItemStatus.PROCESSING
-                                val res = Pipeline.process(context, md, ratio, exportAsJpeg)
+                                val res = Pipeline.process(context, md, ratio)
                                 statusMap[uri] = when (res) {
                                     is SaveResult.Success -> ItemStatus.DONE
                                     is SaveResult.Failure -> ItemStatus.FAIL

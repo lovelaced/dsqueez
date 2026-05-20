@@ -23,8 +23,9 @@ dsqueez closes that gap. Open Lumix Lab, hit *Share* → *dsqueez* → *Save*. D
 
 ## Features
 
-- **Pixel-accurate desqueeze.** Horizontal 1.33× stretch via libvips with a Lanczos-3 resampler — the same kernel used by FFmpeg and ImageMagick. Sharper than Lightroom's built-in upscaler at 100% zoom.
-- **Metadata stays intact.** EXIF (camera, lens, ISO, shutter, GPS) and ICC color profile carried through end-to-end. Capture date propagates so the desqueezed copy sorts chronologically next to the source.
+- **Pixel-accurate desqueeze.** Custom Lanczos-3 resampler running on libjpeg-turbo. Same kernel as ImageMagick and FFmpeg, written from scratch for this app — no oversized dependency stack, ~1 MB of native code.
+- **Metadata stays intact.** EXIF (camera, lens, ISO, shutter, GPS) and ICC color profile carried through end-to-end via libjpeg-turbo's APP-segment helpers. Capture date propagates so the desqueezed copy sorts chronologically next to the source.
+- **Orientation-aware.** EXIF orientation is baked into pixels before resampling, then the output is marked Orientation=1 so no downstream reader applies the rotation twice.
 - **Share-sheet first.** Three taps from Lumix Lab to a finished file in your album.
 - **Batch processing.** Share a stack of photos, processed in parallel.
 - **A real photographer's interface.** Halide-inspired dark and light themes, monospace numerals on every metadata pair, motion and haptics tuned for the Pixel 6 Pro.
@@ -51,39 +52,40 @@ For the bleeding edge — every push to `main` builds an APK in CI:
 
 Anamorphic lenses optically squeeze a wide field of view onto a sensor's regular 3:2 frame. To get a normal image back out, you stretch it horizontally by the lens's squeeze factor — usually 1.33×, 1.5×, or 2×. The Lumix S9 handles this for video previews in real time, but exports stills as-shot.
 
-dsqueez runs the stretch in native code via libvips' [Lanczos-3](https://en.wikipedia.org/wiki/Lanczos_resampling) resampler, then writes a new JPEG with the original EXIF and ICC profile preserved. The pipeline streams tiles, so peak memory stays under 100 MB even on a 24 MP image. Output lands in `Pictures/dsqueez/`, which Google Photos surfaces as a dedicated album.
+dsqueez runs the stretch in native C++ (`app/src/main/cpp/`) using a hand-written [Lanczos-3](https://en.wikipedia.org/wiki/Lanczos_resampling) kernel against libjpeg-turbo for the codec. The full pipeline:
+
+1. Decode JPEG → tightly packed 8-bit RGB
+2. Apply EXIF orientation to the pixel buffer (so portrait shots come out portrait)
+3. Lanczos-3 horizontal resample by the chosen ratio
+4. Encode JPEG at quality 95, full-resolution chroma, progressive
+5. Carry EXIF (APP1) + ICC profile (APP2) through verbatim, with the host side patching geometry tags and forcing Orientation=1
+
+Output lands in `Pictures/dsqueez/`, which Google Photos surfaces as a dedicated album.
 
 ## Build it yourself
 
-Prereqs: Android Studio (Jellyfish 2026.x or newer), or JDK 17 + Android SDK platform 36 if you build from the command line. For the native pipeline, also install **NDK** and **CMake 3.22.1** via Studio's *SDK Manager → SDK Tools*.
+Prereqs: Android Studio (Jellyfish 2026.x or newer), or JDK 17 + Android SDK platform 37 + NDK + CMake 3.22.1 if you build from the command line. libjpeg-turbo source is fetched at first configure via CMake `FetchContent` and cached under `app/.cxx/` — no vendored binaries.
 
 ```bash
 ./gradlew installDebug    # build + install on a connected Pixel
 ./gradlew assembleDebug   # just build, leaves the APK at app/build/outputs/apk/debug/
 ```
 
-### Native processing (libvips)
+### Host smoke test
 
-The pixel work runs through a JNI bridge in `app/src/main/cpp/`. The libvips `.so` binaries aren't committed to the repo — they're large and LGPL-shipping-aware. **The app builds and runs without them**, but tapping *Save* reports `Processing engine not installed` until they're in place.
+The C++ pipeline is `__ANDROID__`-guarded, so it builds and runs on macOS or Linux too — handy for verifying the kernel against a sample JPEG without flashing the phone:
 
-To enable saving, drop arm64-v8a libvips builds (plus transitive deps) into:
-
+```bash
+xcrun clang++ -std=c++17 -O2 \
+  -I/opt/homebrew/include -Iapp/src/main/cpp \
+  test/dsq_test.cpp \
+  app/src/main/cpp/lanczos.cpp \
+  app/src/main/cpp/jpeg_pipeline.cpp \
+  app/src/main/cpp/dsqueez.cpp \
+  -L/opt/homebrew/lib -ljpeg \
+  -o /tmp/dsq_test
+/tmp/dsq_test input.jpg output.jpg 1.33 1
 ```
-app/src/main/jniLibs/arm64-v8a/
-├── libvips.so
-├── libheif.so
-├── libjpeg.so
-├── libgio-2.0.so   libgobject-2.0.so   libglib-2.0.so
-├── libexpat.so
-└── libz.so
-```
-
-with libvips' public headers under `app/src/main/cpp/vips_headers/`. Two sourcing paths:
-
-- **Community prebuilt** — search GitHub for `libvips android`; healthiest forks track current libvips releases.
-- **Build from source** — via an NDK Docker toolchain. A `tools/build-libvips.sh` is on the roadmap.
-
-The Gradle build auto-detects whether the binaries are present and toggles the CMake step accordingly. No config flag needed.
 
 ## Architecture
 
@@ -95,16 +97,18 @@ app/src/main/
 │   ├── ui/
 │   │   ├── theme/                 Color, Type, Motion, Spacing, Haptics
 │   │   ├── components/            PhotoFrame, MetadataStrip, RatioControl, …
-│   │   ├── screens/               Empty / Edit / Batch / OptionsSheet
+│   │   ├── screens/               Empty / Edit / Batch
 │   │   └── anim/DesqueezeStretch  The signature stretch animation
 │   ├── photo/                     Pipeline, MediaStoreSaver, PhotoSource
-│   ├── nativebridge/Vips.kt       JNI surface
+│   ├── nativebridge/Resampler.kt  JNI surface
 │   ├── settings/UserPrefs.kt      DataStore
 │   └── share/ShareIntent.kt       SEND / SEND_MULTIPLE / VIEW parser
 └── cpp/
-    ├── CMakeLists.txt
-    ├── dsqueez.{h,cpp}            libvips pipeline (load_buffer → affine(lanczos3) → save_buffer)
-    └── jni_bridge.cpp
+    ├── CMakeLists.txt             FetchContent libjpeg-turbo, single .so output
+    ├── dsqueez.{h,cpp}            Orchestrator: decode → orient → resample → encode
+    ├── lanczos.{h,cpp}            Lanczos-3 kernel + horizontal resample
+    ├── jpeg_pipeline.{h,cpp}      libjpeg-turbo decode/encode + EXIF/ICC passthrough
+    └── jni_bridge.cpp             JNI surface, Android-only
 ```
 
 ## What it doesn't do
@@ -119,14 +123,11 @@ By design, to keep dsqueez a true single-purpose tool:
 
 ## License
 
-[MIT](LICENSE). The dynamically-linked LGPL libvips and SIL-licensed fonts retain their respective licenses — see *Credits* below.
+[MIT](LICENSE). Bundled fonts and the linked libjpeg-turbo retain their own licenses — see *Credits*.
 
 ### Credits
 
-- **[libvips](https://www.libvips.org/)** — LGPL 2.1, dynamically linked
-- **[libheif](https://github.com/strukturag/libheif)** — LGPL 3.0
-- **[mozjpeg](https://github.com/mozilla/mozjpeg) / libjpeg-turbo** — BSD
-- **[glib](https://gitlab.gnome.org/GNOME/glib)** — LGPL 2.1
+- **[libjpeg-turbo](https://github.com/libjpeg-turbo/libjpeg-turbo)** — modified BSD, statically linked
 - **[Inter](https://rsms.me/inter/)** and **[JetBrains Mono](https://www.jetbrains.com/lp/mono/)** — SIL Open Font License 1.1
 - **AndroidX, Jetpack Compose, Material 3** — Apache 2.0
 

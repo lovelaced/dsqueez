@@ -1,11 +1,11 @@
 package app.dsqueez
 
 import android.app.Application
-import app.dsqueez.nativebridge.Vips
+import app.dsqueez.nativebridge.Resampler
 
 class DsqueezApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        Vips.tryLoad()
+        Resampler.tryLoad()
     }
 }

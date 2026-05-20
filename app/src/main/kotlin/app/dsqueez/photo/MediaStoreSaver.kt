@@ -5,7 +5,6 @@ import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.exifinterface.media.ExifInterface
-import app.dsqueez.nativebridge.Vips
 
 object MediaStoreSaver {
 
@@ -17,20 +16,20 @@ object MediaStoreSaver {
      * Uses IS_PENDING flow so the file never appears half-written in Google Photos.
      * Propagates DATE_TAKEN from the source EXIF so the desqueezed copy sorts
      * chronologically next to the original.
+     *
+     * After the bytes are written, ExifInterface patches the geometry tags
+     * (PixelXDimension, ImageWidth, ImageLength) and forces Orientation=1 —
+     * the native side already baked rotation into the pixels.
      */
     fun publish(
         context: Context,
         bytes: ByteArray,
         metadata: PhotoMetadata,
-        outFormat: Int,
         newWidth: Int,
         newHeight: Int,
     ): Uri {
-        val (mime, ext) = when (outFormat) {
-            Vips.OutFormat.JPEG -> "image/jpeg" to "jpg"
-            Vips.OutFormat.HEIC -> "image/heif" to "heic"
-            else -> "image/jpeg" to "jpg"
-        }
+        val mime = "image/jpeg"
+        val ext  = "jpg"
 
         val baseName = metadata.displayName
             .substringBeforeLast('.')
@@ -61,19 +60,17 @@ object MediaStoreSaver {
                 os.flush()
             }
 
-            // Belt-and-braces EXIF geometry patch — libvips writes EXIF natively,
-            // but we guarantee the geometry tags + orientation are correct.
-            if (outFormat == Vips.OutFormat.JPEG) {
-                runCatching {
-                    resolver.openFileDescriptor(uri, "rw")?.use { pfd ->
-                        val exif = ExifInterface(pfd.fileDescriptor)
-                        exif.setAttribute(ExifInterface.TAG_PIXEL_X_DIMENSION, newWidth.toString())
-                        exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, newWidth.toString())
-                        exif.setAttribute(ExifInterface.TAG_PIXEL_Y_DIMENSION, newHeight.toString())
-                        exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, newHeight.toString())
-                        exif.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
-                        exif.saveAttributes()
-                    }
+            // Belt-and-braces EXIF patch — the native side wrote EXIF verbatim
+            // from the source, which carries the old orientation and dimensions.
+            runCatching {
+                resolver.openFileDescriptor(uri, "rw")?.use { pfd ->
+                    val exif = ExifInterface(pfd.fileDescriptor)
+                    exif.setAttribute(ExifInterface.TAG_PIXEL_X_DIMENSION, newWidth.toString())
+                    exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, newWidth.toString())
+                    exif.setAttribute(ExifInterface.TAG_PIXEL_Y_DIMENSION, newHeight.toString())
+                    exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, newHeight.toString())
+                    exif.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
+                    exif.saveAttributes()
                 }
             }
 

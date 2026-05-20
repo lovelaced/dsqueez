@@ -7,5 +7,5 @@ local.properties
 captures/
 .cxx/
 app/release/
-app/src/main/jniLibs/*/
-!app/src/main/jniLibs/.gitkeep
+/testimg.jpg
+*.jpg

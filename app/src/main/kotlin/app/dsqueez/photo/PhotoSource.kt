@@ -46,7 +46,7 @@ object PhotoSource {
             pixelWidth = bounds.outWidth,
             pixelHeight = bounds.outHeight,
             captureTimeMillis = captureTime,
-            hasRotation = orientation != ExifInterface.ORIENTATION_NORMAL,
+            orientation = orientation,
         )
     }
 
@@ -54,9 +54,6 @@ object PhotoSource {
      * Decode a downsampled preview bitmap. Targets [PREVIEW_MAX_LONGEST_SIDE] for
      * the longest dimension so we never hold a 24MP bitmap in memory just to show
      * the user what they're working with.
-     *
-     * On API 28+ this attempts to decode into Display P3 color space; if the source
-     * isn't wide-gamut, ImageDecoder falls back to sRGB transparently.
      */
     suspend fun decodePreview(context: Context, uri: Uri, originalWidth: Int, originalHeight: Int): Bitmap? =
         withContext(Dispatchers.IO) {
@@ -95,7 +92,6 @@ object PhotoSource {
             ?: exif.getAttribute(ExifInterface.TAG_DATETIME)
             ?: return null
         return runCatching {
-            // EXIF datetimes are "YYYY:MM:DD HH:MM:SS"
             val fmt = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US)
             fmt.timeZone = TimeZone.getDefault()
             fmt.parse(raw)?.time
