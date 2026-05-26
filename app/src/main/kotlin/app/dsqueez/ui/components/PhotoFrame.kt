@@ -7,10 +7,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,22 +38,38 @@ fun PhotoFrame(
     modifier: Modifier = Modifier,
     revealAnimated: Boolean = true,
     calibrationLineProgress: Float = 0f,
+    // True for portrait captures: the anamorphic squeeze sits on the vertical
+    // axis, so the desqueeze stretches height rather than width. [sourceWidth]/
+    // [sourceHeight] are the upright (orientation-applied) dimensions.
+    stretchVertical: Boolean = false,
 ) {
     val colors = Dsq.colors
     val imageBitmap: ImageBitmap? = remember(bitmap) { bitmap?.asImageBitmap() }
-    val desqAspect = if (sourceHeight > 0) (sourceWidth * ratio) / sourceHeight else 1f
+    val desqAspect = when {
+        sourceHeight <= 0 || sourceWidth <= 0 -> 1f
+        stretchVertical -> sourceWidth / (sourceHeight * ratio)
+        else            -> (sourceWidth * ratio) / sourceHeight
+    }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .background(colors.bg),
         contentAlignment = Alignment.Center,
     ) {
+        // Fit the framed photo within the available space, preserving its
+        // desqueezed aspect. Landscape stays width-bound (as before); a tall
+        // portrait desqueeze is height-bound so it never overflows the frame.
+        val heightBound = constraints.hasBoundedHeight &&
+            (maxWidth.value / maxHeight.value) > desqAspect
+        val frameModifier = if (heightBound) {
+            Modifier.fillMaxHeight().aspectRatio(desqAspect)
+        } else {
+            Modifier.fillMaxWidth().aspectRatio(desqAspect)
+        }
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(desqAspect)
+            modifier = frameModifier
                 .border(DsqSpacing.hairline, colors.stroke.copy(alpha = 0.6f)),
         ) {
             if (imageBitmap != null) {
@@ -73,7 +92,7 @@ fun PhotoFrame(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            scaleX = ratio
+                            if (stretchVertical) scaleY = ratio else scaleX = ratio
                             this.alpha = alpha.value
                         },
                     contentScale = ContentScale.Fit,
@@ -81,30 +100,46 @@ fun PhotoFrame(
             }
 
             if (calibrationLineProgress > 0f) {
-                CalibrationLine(
-                    progress = calibrationLineProgress,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(DsqSpacing.hairline)
-                        .align(Alignment.BottomCenter),
-                )
+                if (stretchVertical) {
+                    // Vertical hairline tracing up the start edge as height grows.
+                    CalibrationLine(
+                        progress = calibrationLineProgress,
+                        vertical = true,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(DsqSpacing.hairline)
+                            .align(Alignment.CenterStart),
+                    )
+                } else {
+                    CalibrationLine(
+                        progress = calibrationLineProgress,
+                        vertical = false,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(DsqSpacing.hairline)
+                            .align(Alignment.BottomCenter),
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * The 1px amber hairline that traces beneath the photo during the desqueeze.
- * Grows from center outward, matching the visual metaphor of the stretch.
+ * The 1px amber hairline that traces alongside the photo during the desqueeze.
+ * Grows from center outward along the stretch axis, matching the visual metaphor:
+ * horizontal for a landscape desqueeze, [vertical] for a portrait one.
  */
 @Composable
-private fun CalibrationLine(progress: Float, modifier: Modifier = Modifier) {
+private fun CalibrationLine(progress: Float, vertical: Boolean, modifier: Modifier = Modifier) {
+    val p = progress.coerceIn(0f, 1f)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .height(DsqSpacing.hairline)
-                .background(Dsq.colors.accent),
+            modifier = (if (vertical) {
+                Modifier.fillMaxHeight(p).width(DsqSpacing.hairline)
+            } else {
+                Modifier.fillMaxWidth(p).height(DsqSpacing.hairline)
+            }).background(Dsq.colors.accent),
         )
     }
 }

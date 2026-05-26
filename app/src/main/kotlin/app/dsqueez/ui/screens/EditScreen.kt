@@ -97,7 +97,7 @@ fun EditScreen(
         runCatching {
             val md = PhotoSource.readMetadata(context, uri)
             val preview = if (md.supported) {
-                PhotoSource.decodePreview(context, uri, md.pixelWidth, md.pixelHeight)
+                PhotoSource.decodePreview(context, uri, md.pixelWidth, md.pixelHeight, md.orientation)
             } else null
             // Pick the initial ratio: EXIF suggestion if the lens announced
             // one, else the user's persisted default. Read defaultRatio fresh
@@ -193,11 +193,12 @@ private fun ReadyPanel(
             ) { animatedRatio, lineProgress ->
                 PhotoFrame(
                     bitmap = preview,
-                    sourceWidth = metadata.pixelWidth,
-                    sourceHeight = metadata.pixelHeight,
+                    sourceWidth = metadata.uprightWidth,
+                    sourceHeight = metadata.uprightHeight,
                     ratio = animatedRatio,
                     revealAnimated = true,
                     calibrationLineProgress = lineProgress,
+                    stretchVertical = metadata.swapsAxes,
                 )
             }
         }
@@ -259,11 +260,12 @@ private fun SavedPanel(
                 Box(modifier = Modifier.fillMaxWidth()) {
                     PhotoFrame(
                         bitmap = preview,
-                        sourceWidth = metadata.pixelWidth,
-                        sourceHeight = metadata.pixelHeight,
+                        sourceWidth = metadata.uprightWidth,
+                        sourceHeight = metadata.uprightHeight,
                         ratio = ratio,
                         revealAnimated = false,
                         modifier = Modifier.alpha(alpha.value),
+                        stretchVertical = metadata.swapsAxes,
                     )
                 }
                 Box(
@@ -440,7 +442,7 @@ private fun buildMetadataItems(
     ratio: Float,
 ): List<MetadataItem> {
     val outW = metadata.desqueezedWidth(ratio)
-    val outH = metadata.uprightHeight
+    val outH = metadata.desqueezedHeight(ratio)
     return listOf(
         MetadataItem("SOURCE", "${metadata.uprightWidth}×${metadata.uprightHeight}"),
         MetadataItem("RATIO",  formatRatio(ratio)),

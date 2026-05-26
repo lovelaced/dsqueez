@@ -39,9 +39,16 @@ struct DecodeResult {
     std::string  error;  // empty on success
 };
 
-// Decode a JPEG from memory. EXIF and ICC are captured for later passthrough;
-// the image is returned upright (orientation already baked into pixels).
-DecodeResult decode_jpeg(const uint8_t* src, size_t src_len, Orientation orientation);
+// Decode a JPEG from memory. EXIF and ICC are captured for later passthrough.
+// The image is returned in its raw sensor orientation — EXIF rotation is NOT
+// applied here, so the caller can resample along the sensor axis before baking
+// orientation with apply_orientation().
+DecodeResult decode_jpeg(const uint8_t* src, size_t src_len);
+
+// Bake an EXIF orientation into the pixel buffer, rotating/flipping in place.
+// Updates `w`/`h` to the post-transform dimensions (swapped for 90° rotations).
+// No-op for Orientation::Normal.
+void apply_orientation(Orientation o, std::vector<uint8_t>& buf, int& w, int& h);
 
 struct EncodeResult {
     std::vector<uint8_t> bytes;

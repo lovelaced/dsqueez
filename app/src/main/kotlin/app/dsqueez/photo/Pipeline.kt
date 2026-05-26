@@ -59,7 +59,7 @@ object Pipeline {
         }
 
         val newWidth  = metadata.desqueezedWidth(ratio)
-        val newHeight = metadata.uprightHeight
+        val newHeight = metadata.desqueezedHeight(ratio)
 
         val savedUri = runCatching {
             MediaStoreSaver.publish(

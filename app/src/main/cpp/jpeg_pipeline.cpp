@@ -134,6 +134,8 @@ void rotate_90_ccw(const uint8_t* src, int sw, int sh, uint8_t* dst) {
     }
 }
 
+}  // namespace
+
 void apply_orientation(
     Orientation o,
     std::vector<uint8_t>& buf,
@@ -175,9 +177,7 @@ void apply_orientation(
     h = nh;
 }
 
-}  // namespace
-
-DecodeResult decode_jpeg(const uint8_t* src, size_t src_len, Orientation orientation) {
+DecodeResult decode_jpeg(const uint8_t* src, size_t src_len) {
     DecodeResult result;
 
     jpeg_decompress_struct cinfo{};
@@ -238,10 +238,8 @@ DecodeResult decode_jpeg(const uint8_t* src, size_t src_len, Orientation orienta
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
 
-    // Bake EXIF orientation into pixels so downstream consumers (including
-    // our own resampler) see an upright image and don't double-apply.
-    apply_orientation(orientation, img.rgb, img.width, img.height);
-
+    // Returned in raw sensor orientation. The caller resamples along the sensor
+    // axis (where the anamorphic squeeze lives) before baking EXIF rotation.
     return result;
 }
 

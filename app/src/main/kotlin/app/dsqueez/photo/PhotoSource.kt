@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ColorSpace
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
@@ -74,11 +75,19 @@ object PhotoSource {
     }
 
     /**
-     * Decode a downsampled preview bitmap. Targets [PREVIEW_MAX_LONGEST_SIDE] for
-     * the longest dimension so we never hold a 24MP bitmap in memory just to show
-     * the user what they're working with.
+     * Decode a downsampled preview bitmap, rotated upright per the EXIF
+     * [orientation]. Targets [PREVIEW_MAX_LONGEST_SIDE] for the longest dimension
+     * so we never hold a 24MP bitmap in memory just to show the user what they're
+     * working with. BitmapFactory ignores the orientation tag, so we apply it here
+     * — the preview must match the upright output the save pipeline produces.
      */
-    suspend fun decodePreview(context: Context, uri: Uri, originalWidth: Int, originalHeight: Int): Bitmap? =
+    suspend fun decodePreview(
+        context: Context,
+        uri: Uri,
+        originalWidth: Int,
+        originalHeight: Int,
+        orientation: Int = ExifInterface.ORIENTATION_NORMAL,
+    ): Bitmap? =
         withContext(Dispatchers.IO) {
             val longest = maxOf(originalWidth, originalHeight).coerceAtLeast(1)
             val sample = computeSampleSize(longest, PREVIEW_MAX_LONGEST_SIDE)
@@ -91,10 +100,31 @@ object PhotoSource {
                 }
             }
 
-            context.contentResolver.openInputStream(uri).use { input: InputStream? ->
+            val raw = context.contentResolver.openInputStream(uri).use { input: InputStream? ->
                 BitmapFactory.decodeStream(input, null, opts)
-            }
+            } ?: return@withContext null
+
+            applyOrientation(raw, orientation)
         }
+
+    /** Rotate/flip [bitmap] to upright per an EXIF orientation tag (1..8). */
+    private fun applyOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
+        val m = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> m.setScale(-1f, 1f)
+            ExifInterface.ORIENTATION_ROTATE_180      -> m.setRotate(180f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL   -> { m.setRotate(180f); m.postScale(-1f, 1f) }
+            ExifInterface.ORIENTATION_TRANSPOSE       -> { m.setRotate(90f);  m.postScale(-1f, 1f) }
+            ExifInterface.ORIENTATION_ROTATE_90       -> m.setRotate(90f)
+            ExifInterface.ORIENTATION_TRANSVERSE      -> { m.setRotate(270f); m.postScale(-1f, 1f) }
+            ExifInterface.ORIENTATION_ROTATE_270      -> m.setRotate(270f)
+            else -> return bitmap  // Normal or undefined
+        }
+        return runCatching {
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true)
+                .also { if (it != bitmap) bitmap.recycle() }
+        }.getOrDefault(bitmap)
+    }
 
     private fun queryNameAndSize(resolver: ContentResolver, uri: Uri): Pair<String, Long> {
         var name = uri.lastPathSegment ?: "photo"

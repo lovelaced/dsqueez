@@ -32,12 +32,15 @@ object Resampler {
      * Desqueeze a JPEG by horizontal scale [ratio] using Lanczos-3.
      *
      * @param srcBytes    encoded source JPEG bytes
-     * @param ratio       horizontal scale factor (e.g. 1.33f)
+     * @param ratio       desqueeze scale factor (e.g. 1.33f), applied along the
+     *                    sensor's horizontal axis where the anamorphic squeeze lives
      * @param quality     JPEG output quality, 1..100 (95 is the calibrated default)
-     * @param orientation EXIF orientation of the source (1..8). Pixels are rotated
-     *                    to upright before resampling, so the output is logically
-     *                    Orientation = 1. The host is responsible for patching the
-     *                    Orientation EXIF tag on the saved file.
+     * @param orientation EXIF orientation of the source (1..8). The stretch is
+     *                    applied in sensor space, then orientation is baked into the
+     *                    pixels so the output is upright (logically Orientation = 1).
+     *                    For a portrait capture this lands the stretch on the upright
+     *                    image's vertical axis. The host is responsible for patching
+     *                    the Orientation EXIF tag on the saved file.
      * @return encoded JPEG bytes with EXIF + ICC carried through
      * @throws ResamplerException on any libjpeg / encode error
      */
